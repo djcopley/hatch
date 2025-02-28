@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from collections import defaultdict
 from contextlib import suppress
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Generic, cast
@@ -52,6 +53,8 @@ class ProjectMetadata(Generic[PluginManagerBound]):
         self._core: CoreMetadata | None = None
         self._hatch: HatchMetadata | None = None
 
+        self._dependency_groups: dict[str, list[str]] | None = None
+
         self._core_raw_metadata: dict[str, Any] | None = None
         self._dynamic: list[str] | None = None
         self._name: str | None = None
@@ -76,6 +79,38 @@ class ProjectMetadata(Generic[PluginManagerBound]):
             self._context = Context(self.root)
 
         return self._context
+
+    @property
+    def dependency_groups(self) -> dict[str, Any]:
+        """
+        https://peps.python.org/pep-0735/
+        """
+        if self._dependency_groups is None:
+            dependency_groups = self.config.get('dependency-groups', {})
+
+            if not isinstance(dependency_groups, dict):
+                message = 'Field `dependency-groups` must be a table'
+                raise ValueError(message)
+
+            original_names = defaultdict(list)
+            normalized_groups = {}
+
+            for group_name, value in dependency_groups.items():
+                normed_group_name = normalize_project_name(group_name)
+                original_names[normed_group_name].append(group_name)
+                normalized_groups[normed_group_name] = value
+
+            errors = []
+            for normed_name, names in original_names.items():
+                if len(names) > 1:
+                    errors.append(f"{normed_name} ({', '.join(names)})")
+            if errors:
+                msg = f"Field `dependency-groups` contains duplicate names: {', '.join(errors)}"
+                raise ValueError(msg)
+
+            self._dependency_groups = dependency_groups
+
+        return self._dependency_groups
 
     @property
     def core_raw_metadata(self) -> dict[str, Any]:

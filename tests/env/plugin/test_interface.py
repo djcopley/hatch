@@ -793,13 +793,15 @@ class TestDependencyGroups:
         ):
             _ = environment.dependency_groups
 
-    def test_correct(self, isolation, isolated_data_dir, platform, global_application):
+    def test_correct(self, isolation, isolated_data_dir, platform, temp_application):
         config = {
             'project': {'name': 'my_app', 'version': '0.0.1'},
             'dependency-groups': {'foo-bar': [], 'baz': []},
             'tool': {'hatch': {'envs': {'default': {'dependency-groups': ['Foo...Bar', 'Baz', 'baZ']}}}},
         }
         project = Project(isolation, config=config)
+        project.set_app(temp_application)
+        temp_application.project = project
         environment = MockEnvironment(
             isolation,
             project.metadata,
@@ -810,7 +812,7 @@ class TestDependencyGroups:
             isolated_data_dir,
             platform,
             0,
-            global_application,
+            temp_application,
         )
 
         assert environment.dependency_groups == ['baz', 'foo-bar']
@@ -865,7 +867,7 @@ class TestDependencyGroups:
         ):
             _ = environment.dependency_groups
 
-    def test_group_undefined(self, isolation, isolated_data_dir, platform, global_application):
+    def test_group_undefined(self, isolation, isolated_data_dir, platform, temp_application):
         config = {
             'project': {
                 'name': 'my_app',
@@ -875,6 +877,8 @@ class TestDependencyGroups:
             'tool': {'hatch': {'envs': {'default': {'dependency-groups': ['foo', 'bar', '']}}}},
         }
         project = Project(isolation, config=config)
+        project.set_app(temp_application)
+        temp_application.project = project
         environment = MockEnvironment(
             isolation,
             project.metadata,
@@ -885,7 +889,7 @@ class TestDependencyGroups:
             isolated_data_dir,
             platform,
             0,
-            global_application,
+            temp_application,
         )
 
         with pytest.raises(

@@ -310,7 +310,7 @@ class EnvironmentInterface(ABC):
 
             for dependency_group in self.dependency_groups:
                 all_dependencies_complex.extend(
-                    get_complex_dependency_group(self.metadata.dependency_groups, dependency_group)
+                    get_complex_dependency_group(self.app.project.dependency_groups, dependency_group)
                 )
 
         return all_dependencies_complex
@@ -453,7 +453,7 @@ class EnvironmentInterface(ABC):
             normalized_dependency_group = normalize_project_name(dependency_group)
             if (
                 not self.metadata.hatch.metadata.hook_config
-                and normalized_dependency_group not in self.metadata.dependency_groups
+                and normalized_dependency_group not in self.app.project.dependency_groups
             ):
                 message = (
                     f'Dependency Group `{normalized_dependency_group}` of field `tool.hatch.envs.{self.name}.dependency-groups` is not '
